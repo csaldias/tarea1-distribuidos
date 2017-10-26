@@ -2,6 +2,8 @@ import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.FileReader;
+import java.net.InetAddress;
+import java.net.MulticastSocket;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.Charset;
@@ -32,11 +34,20 @@ public class servidor_distrito {
             //No pedimos IP, porque por defecto escuchamos peticiones en todas las interfaces de la máquina
 
             ServerSocket ss = new ServerSocket(PUERTO_PETICION);
+
+            InetAddress group = InetAddress.getByName(IP_MULTICAST);
+            MulticastSocket ms = new MulticastSocket(PUERTO_MULTICAST);
             int id=0;
             System.out.println("Esperando mensajes en puerto "+PUERTO_PETICION+"..."); //Esperando conexión
+
+            //Iniciamos thread de titanes
+            ClientServiceThreadTitanes titanThread = new ClientServiceThreadTitanes(ms, id++);
+            titanThread.start();
+
+            //Esperamos conexiones de peticiones, iniciamos thread por cada conexion
             while (true) {
                 Socket cs = ss.accept(); //Accept comienza el socket y espera una conexión desde un cliente
-                ClientServiceThread2 cliThread = new ClientServiceThread2(cs, id++);
+                ClientServiceThreadRequests cliThread = new ClientServiceThreadRequests(cs, id++);
                 cliThread.start();
             }
         }
@@ -48,13 +59,12 @@ public class servidor_distrito {
 }
 
 
-class ClientServiceThread2 extends Thread {
+class ClientServiceThreadRequests extends Thread {
     Socket cs;
     int clientID = -1;
     public String mensajeServidor; //Mensaje entrante (recibido) por el servidor
-    static int titan_id = 1; //ID para titanes (asignacion)
 
-    ClientServiceThread2(Socket s, int i) {
+    ClientServiceThreadRequests(Socket s, int i) {
         cs = s;
         clientID = i;
     }
@@ -112,6 +122,35 @@ class ClientServiceThread2 extends Thread {
                 }
             }
 
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+    }
+}
+
+class ClientServiceThreadTitanes extends Thread {
+    MulticastSocket ms;
+    int clientID = -1;
+    public String mensajeServidor; //Mensaje entrante (recibido) por el servidor
+
+    ClientServiceThreadTitanes (MulticastSocket s, int i) {
+        ms = s;
+        clientID = i;
+    }
+
+    private String getServerTime() {
+        Calendar calendar = Calendar.getInstance();
+        SimpleDateFormat dateFormat = new SimpleDateFormat(
+                "EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
+        dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+        return dateFormat.format(calendar.getTime());
+    }
+
+    public void run() {
+        try {
+            System.out.println("Thread Titanes");
         }
         catch (Exception e)
         {
