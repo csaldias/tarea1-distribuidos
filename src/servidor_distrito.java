@@ -27,7 +27,7 @@ public class servidor_distrito {
             IP_MULTICAST = scan.nextLine();
             System.out.print("Puerto Multicast: ");
             PUERTO_MULTICAST = Integer.parseInt(scan.nextLine());
-            System.out.print("Puerto para peticiones? ");
+            System.out.print("Puerto para peticiones: ");
             PUERTO_PETICION = Integer.parseInt(scan.nextLine());
             //No pedimos IP, porque por defecto escuchamos peticiones en todas las interfaces de la máquina
 
@@ -73,8 +73,8 @@ class ClientServiceThread2 extends Thread {
             DataOutputStream salidaCliente = new DataOutputStream(cs.getOutputStream());
             //Se obtiene el flujo entrante desde el cliente (cliente -> servidor)
             DataInputStream entrada = new DataInputStream(cs.getInputStream());
-            //Obtenemos la ubicación de nuestra BD de servidores de distrito
-            Path db_distrito = Paths.get("db_distrito.csv");
+            //Obtenemos la ubicación de nuestra BD de titanes
+            Path db_distrito = Paths.get("db_titanes.csv");
             //Obtenemos la IP del cliente
             String ip = cs.getInetAddress().toString().replace("/", "");
 
@@ -84,40 +84,30 @@ class ClientServiceThread2 extends Thread {
                 if (!mensajeServidor.isEmpty()){
                     System.out.println("Recibido: "+mensajeServidor);
 
-                    if (mensaje[0].equals("list")) {
-                        System.out.println("LIST command received.");
-                        //Leemos y parseamos la BD de distritos
-                        String distritos = "";
-                        String readLine = "";
-                        BufferedReader b = new BufferedReader(new FileReader(db_distrito.toFile()));
-                        while ((readLine = b.readLine()) != null) {
-                            distritos += readLine.split(",")[0]+",";
-                        }
-                        distritos = distritos.substring(0, distritos.length()-1);
-                        System.out.println(distritos);
-                        salidaCliente.writeUTF(distritos);
-                    } else if (mensaje[0].equals("connect")) {
-                        //do something else
-                        System.out.println("CONNECT command received.");
-                        System.out.print("Autorizar conexion de "+ip+" al servidor "+mensaje[1]+"? [S/N] ");
-                        Scanner scan = new Scanner(System.in);
-                        String opcion = scan.nextLine();
-                        if(opcion.equals("S")) {
-                            System.out.println("Petción aceptada.");
-                            //Leemos y parseamos la BD de distritos
+                    switch (mensaje[0]) {
+                        case "list":
+                            System.out.println("LIST command received.");
+                            //Listamos los titanes disponibles en el distrito
+                            String distritos = "";
                             String readLine = "";
                             BufferedReader b = new BufferedReader(new FileReader(db_distrito.toFile()));
                             while ((readLine = b.readLine()) != null) {
-                                if (readLine.split(",")[0].equals(mensaje[1])){
-                                    salidaCliente.writeUTF("success "+readLine);
-                                    break;
-                                }
+                                distritos += readLine.split(",")[0] + ",";
                             }
-                        } else {
-                            System.out.println("Conexion rechazada.");
-                            salidaCliente.writeUTF("err denied");
-                        }
+                            distritos = distritos.substring(0, distritos.length() - 1);
+                            System.out.println(distritos);
+                            salidaCliente.writeUTF(distritos);
+                            break;
+                        case "capture":
+                            //do something else
+                            System.out.println("CAPTURE command received.");
 
+                            break;
+                        case "kill":
+                            //do something else
+                            System.out.println("KILL command received.");
+
+                            break;
                     }
                 }
             }
