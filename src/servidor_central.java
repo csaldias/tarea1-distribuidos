@@ -69,7 +69,7 @@ class ClientServiceThread extends Thread {
     Socket cs;
     int clientID = -1;
     public String mensajeServidor; //Mensaje entrante (recibido) por el servidor
-    static int titan_id = 1; //ID para titanes (asignacion)
+    static int titan_id = 100; //ID para titanes (asignacion)
 
     ClientServiceThread(Socket s, int i) {
         cs = s;
@@ -135,6 +135,9 @@ class ClientServiceThread extends Thread {
                             salidaCliente.writeUTF("err denied");
                         }
 
+                    } else if (mensaje[0].equals("id_titan")) {
+                        //Devolvemos ID para el titan
+                        salidaCliente.writeUTF(Integer.toString(titan_id++));
                     }
                 }
             }
