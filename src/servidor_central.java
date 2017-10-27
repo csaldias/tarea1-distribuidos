@@ -120,13 +120,15 @@ class ClientServiceThread extends Thread {
                         Scanner scan = new Scanner(System.in);
                         String opcion = scan.nextLine();
                         if(opcion.equals("S")) {
-                            System.out.println("Petción aceptada.");
+                            System.out.println("Petición aceptada.");
                             //Leemos y parseamos la BD de distritos
                             String readLine = "";
                             BufferedReader b = new BufferedReader(new FileReader(db_distrito.toFile()));
                             while ((readLine = b.readLine()) != null) {
                                 if (readLine.split(",")[0].equals(mensaje[1])){
                                     salidaCliente.writeUTF("success "+readLine);
+                                    //Ejemplo de mensaje enviado a cliente:
+                                    //success Trost,224.10.1.3,1234,10.6.140.151,8080
                                     break;
                                 }
                             }
@@ -136,7 +138,7 @@ class ClientServiceThread extends Thread {
                         }
 
                     } else if (mensaje[0].equals("id_titan")) {
-                        //Devolvemos ID para el titan
+                        //Devolvemos ID para el titan en el servidor de distrito
                         salidaCliente.writeUTF(Integer.toString(titan_id++));
                     }
                 }

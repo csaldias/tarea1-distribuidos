@@ -73,6 +73,7 @@ class ClientServiceThreadRequests extends Thread {
     Socket cs;
     int clientID = -1;
     public String mensajeServidor; //Mensaje entrante (recibido) por el servidor
+    static public Map<Integer, String> bd_titanes = new HashMap<Integer, String>(); //BD de Titanes
 
     ClientServiceThreadRequests(Socket s, int i) {
         cs = s;
@@ -93,8 +94,6 @@ class ClientServiceThreadRequests extends Thread {
             DataOutputStream salidaCliente = new DataOutputStream(cs.getOutputStream());
             //Se obtiene el flujo entrante desde el cliente (cliente -> servidor)
             DataInputStream entrada = new DataInputStream(cs.getInputStream());
-            //Obtenemos la ubicación de nuestra BD de titanes
-            Path db_distrito = Paths.get("db_titanes.csv");
             //Obtenemos la IP del cliente
             String ip = cs.getInetAddress().toString().replace("/", "");
 
@@ -102,30 +101,70 @@ class ClientServiceThreadRequests extends Thread {
                 String[] mensaje = mensajeServidor.split(" ");
 
                 if (!mensajeServidor.isEmpty()){
-                    System.out.println("Recibido: "+mensajeServidor);
-
                     switch (mensaje[0]) {
                         case "list":
-                            System.out.println("LIST command received.");
+                            System.out.println("LIST command received");
                             //Listamos los titanes disponibles en el distrito
-                            String distritos = "";
-                            String readLine = "";
-                            BufferedReader b = new BufferedReader(new FileReader(db_distrito.toFile()));
-                            while ((readLine = b.readLine()) != null) {
-                                distritos += readLine.split(",")[0] + ",";
+                            String lista_titanes = "";
+
+                            for (Map.Entry<Integer, String> titan : ClientServiceThreadRequests.bd_titanes.entrySet()) {
+                                lista_titanes += titan.getKey() + "," + titan.getValue() + ";";
                             }
-                            distritos = distritos.substring(0, distritos.length() - 1);
-                            System.out.println(distritos);
-                            salidaCliente.writeUTF(distritos);
+                            System.out.println(lista_titanes);
+                            salidaCliente.writeUTF(lista_titanes);
+                            //Ejemplo de mensaje enviado a cliente:
+                            //100,Eren,1;101,Carlitos,3;102,Camilo,2;
+
                             break;
                         case "capture":
-                            //do something else
                             System.out.println("CAPTURE command received.");
+                            //Capturamos a un titán, sólo si su tipo es 1 o 3
+
+                            //Existe el titan a capturar?
+                            if(!ClientServiceThreadRequests.bd_titanes.containsKey(Integer.parseInt(mensaje[1]))) {
+                                System.out.println("Titán inexistente.");
+                                salidaCliente.writeUTF("err NoExiste");
+                            } else {
+                                //Obtenemos el titan a capturar
+                                String titan = ClientServiceThreadRequests.bd_titanes.get(Integer.parseInt(mensaje[1]));
+
+                                //El titan es de tipo 1 o 3?
+                                if(!(titan.split(",")[1].equals("1") || titan.split(",")[1].equals("3"))) {
+                                    salidaCliente.writeUTF("err TipoIncompatible");
+                                } else {
+                                    //Se captura al titan
+                                    ClientServiceThreadRequests.bd_titanes.remove(Integer.parseInt(mensaje[1]));
+                                    salidaCliente.writeUTF("success "+mensaje[1]+","+titan);
+                                    //Ejemplo de mensaje enviado a cliente:
+                                    //success 100,Eren,1
+                                }
+                            }
 
                             break;
                         case "kill":
                             //do something else
                             System.out.println("KILL command received.");
+                            //Asesinamos a un titán, sólo si su tipo es 1 o 2
+
+                            //Existe el titan a capturar?
+                            if(!ClientServiceThreadRequests.bd_titanes.containsKey(Integer.parseInt(mensaje[1]))) {
+                                System.out.println("Titán inexistente.");
+                                salidaCliente.writeUTF("err NoExiste");
+                            } else {
+                                //Obtenemos el titan a capturar
+                                String titan = ClientServiceThreadRequests.bd_titanes.get(Integer.parseInt(mensaje[1]));
+
+                                //El titan es de tipo 1 o 2?
+                                if(!(titan.split(",")[1].equals("1") || titan.split(",")[1].equals("2"))) {
+                                    salidaCliente.writeUTF("err TipoIncompatible");
+                                } else {
+                                    //Se asesina al titan
+                                    ClientServiceThreadRequests.bd_titanes.remove(Integer.parseInt(mensaje[1]));
+                                    salidaCliente.writeUTF("success "+mensaje[1]+","+titan);
+                                    //Ejemplo de mensaje enviado a cliente:
+                                    //success 100,Eren,1
+                                }
+                            }
 
                             break;
                     }
@@ -171,8 +210,6 @@ class ClientServiceThreadTitanes extends Thread {
             DataOutputStream salidaServidor = new DataOutputStream(cs.getOutputStream());
             DataInputStream entrada = new DataInputStream(cs.getInputStream());
             Scanner scan = new Scanner(System.in);
-            //Obtenemos la ubicación de nuestra BD de titanes
-            Path db_titanes = Paths.get("db_titanes.csv");
 
             while (true){
                 System.out.println("Para publicar titanes, presione Enter.");
@@ -194,8 +231,9 @@ class ClientServiceThreadTitanes extends Thread {
                     ms.send(hi);
 
                     //Agregamos el nuevo titan a la lista
-                    List<String> nuevo_titan = Arrays.asList(msg);
-                    Files.write(db_titanes, nuevo_titan, Charset.forName("UTF-8"), StandardOpenOption.APPEND);
+                    //List<String> nuevo_titan = Arrays.asList(msg);
+                    //Files.write(db_titanes, nuevo_titan, Charset.forName("UTF-8"), StandardOpenOption.APPEND);
+                    ClientServiceThreadRequests.bd_titanes.put(id_titan, nombre_titan+","+tipo_titan);
 
                     System.out.println("Titán publicado.\n");
                 }

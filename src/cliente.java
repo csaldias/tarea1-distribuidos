@@ -1,12 +1,17 @@
 import java.io.*;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.Scanner;
+import java.net.*;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 public class cliente {
 
     private int PUERTO = 1234; //Puerto para la conexión
     private String HOST = "localhost"; //Host para la conexión
+    private int PUERTO_MULTICAST = 1234; //Puerto para multicast
+    private String IP_MULTICAST = "0.0.0.0"; //IP para multicast
+
     protected String mensajeServidor; //Mensajes entrantes (recibidos) en el servidor
     protected ServerSocket ss; //Socket del servidor
     protected Socket cs; //Socket del cliente
@@ -24,6 +29,7 @@ public class cliente {
                 System.out.println("1-Enviar Mensaje.");
                 System.out.println("2-Pointless.");
                 System.out.println("3-Cerrar Conexión.");
+                System.out.println("4-Escuchar Multicast");
                 //Flujo de datos hacia el servidor
                 //System.out.println("Ingrese Mensaje");
 
@@ -48,6 +54,15 @@ public class cliente {
                     cs.close();//Fin de la conexión
                     break;
                 }
+                else if(text.equals("4")) {
+                    System.out.println("IP Multicast: ");
+                    IP_MULTICAST = scan.nextLine();
+                    System.out.println("Puerto Multicast: ");
+                    PUERTO_MULTICAST = Integer.parseInt(scan.nextLine());
+
+                    MultithreadListen ml = new MultithreadListen(IP_MULTICAST, PUERTO_MULTICAST, 0);
+                    ml.start();
+                }
                 else{
                     System.out.println("¯\\_(ツ)_/¯");
                 }
@@ -56,6 +71,60 @@ public class cliente {
         catch (Exception e)
         {
             System.out.println(e.getMessage());
+        }
+    }
+}
+
+class MultithreadListen extends Thread {
+    private String IP_multicast;
+    private int puerto_multicast;
+    private int clientID = -1;
+
+    MultithreadListen (String ip, int puerto, int i) {
+        IP_multicast = ip;
+        puerto_multicast = puerto;
+        clientID = i;
+    }
+
+    public void run() {
+        try {
+            MulticastSocket ms = new MulticastSocket(puerto_multicast);
+
+            //Código para elegir la interfaz de red por la que realizar la escucha multicast
+            //Gracias, StackOverflow <3
+            Enumeration e = NetworkInterface.getNetworkInterfaces();
+            while (e.hasMoreElements()) {
+                NetworkInterface n = (NetworkInterface) e.nextElement();
+                Enumeration ee = n.getInetAddresses();
+                while (ee.hasMoreElements()) {
+                    InetAddress i = (InetAddress) ee.nextElement();
+                    if (i.isSiteLocalAddress() && !i.isAnyLocalAddress() && !i.isLinkLocalAddress()
+                            && !i.isLoopbackAddress() && !i.isMulticastAddress()) {
+                        ms.setNetworkInterface(NetworkInterface.getByName(n.getName()));
+                        System.out.println(n.getName());
+                    }
+                }
+            }
+
+            ms.joinGroup(InetAddress.getByName(IP_multicast));
+
+            while (true){
+                byte[] buf = new byte[1024];
+                DatagramPacket pack = new DatagramPacket(buf, buf.length);
+                ms.receive(pack);
+                //System.out.println("Received data from: " + pack.getAddress().toString() +
+                //        ":" + pack.getPort() + " with length: " +
+                //        pack.getLength());
+                //System.out.write(pack.getData(), 0, pack.getLength());
+
+                String msg = new String(pack.getData(),0, pack.getLength());
+                String[] titan = msg.split(",");
+                System.out.println("Aparece nuevo Titan! "+titan[0]+", tipo "+titan[1]+", ID "+titan[2]+".");
+            }
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
         }
     }
 }
