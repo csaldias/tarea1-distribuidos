@@ -1,9 +1,6 @@
 import com.sun.xml.internal.ws.api.pipe.SOAPBindingCodec;
 
-import java.io.BufferedReader;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.FileReader;
+import java.io.*;
 import java.net.*;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -110,7 +107,7 @@ class ClientServiceThreadRequests extends Thread {
                             for (Map.Entry<Integer, String> titan : ClientServiceThreadRequests.bd_titanes.entrySet()) {
                                 lista_titanes += titan.getKey() + "," + titan.getValue() + ";";
                             }
-                            System.out.println(lista_titanes);
+                            //System.out.println(lista_titanes);
                             salidaCliente.writeUTF(lista_titanes);
                             //Ejemplo de mensaje enviado a cliente:
                             //100,Eren,1;101,Carlitos,3;102,Camilo,2;
@@ -122,7 +119,7 @@ class ClientServiceThreadRequests extends Thread {
 
                             //Existe el titan a capturar?
                             if(!ClientServiceThreadRequests.bd_titanes.containsKey(Integer.parseInt(mensaje[1]))) {
-                                System.out.println("Titán inexistente.");
+                                //System.out.println("Titán inexistente.");
                                 salidaCliente.writeUTF("err NoExiste");
                             } else {
                                 //Obtenemos el titan a capturar
@@ -148,7 +145,7 @@ class ClientServiceThreadRequests extends Thread {
 
                             //Existe el titan a capturar?
                             if(!ClientServiceThreadRequests.bd_titanes.containsKey(Integer.parseInt(mensaje[1]))) {
-                                System.out.println("Titán inexistente.");
+                                //System.out.println("Titán inexistente.");
                                 salidaCliente.writeUTF("err NoExiste");
                             } else {
                                 //Obtenemos el titan a capturar
@@ -171,6 +168,9 @@ class ClientServiceThreadRequests extends Thread {
                 }
             }
 
+        }
+        catch (EOFException e) {
+            System.out.println("Cliente desconectado.");
         }
         catch (Exception e)
         {

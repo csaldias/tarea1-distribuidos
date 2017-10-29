@@ -111,7 +111,7 @@ class ClientServiceThread extends Thread {
                             distritos += readLine.split(",")[0]+",";
                         }
                         distritos = distritos.substring(0, distritos.length()-1);
-                        System.out.println(distritos);
+                        //System.out.println(distritos);
                         salidaCliente.writeUTF(distritos);
                     } else if (mensaje[0].equals("connect")) {
                         //do something else
@@ -144,6 +144,9 @@ class ClientServiceThread extends Thread {
                 }
             }
 
+        }
+        catch (EOFException e) {
+            System.out.println("Cliente desconectado.");
         }
         catch (Exception e)
         {
